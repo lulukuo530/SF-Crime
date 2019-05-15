@@ -1,0 +1,707 @@
+---
+title: "Descript Analysis"
+author: "SF crime"
+output:
+  md_document:
+    variant: markdown_github
+---
+```{r, echo=FALSE, fig.height=5.5}
+train = fread("~/Desktop/NCKU/Consulting/kaggle_crime/train.csv", sep=",", stringsAsFactors = TRUE)
+train$d<-as.Date(train$Dates)
+str(train)
+summary(train)
+nrow(subset(train, train$Y>=40))
+newtrain=subset(train, train$Y!=90)
+summary(newtrain)
+head(train)
+pd1x<-mean(subset(newtrain,newtrain$PdDistrict==levels(train$PdDistrict)[1])$X)
+pd1y<-mean(subset(newtrain,newtrain$PdDistrict==levels(train$PdDistrict)[1])$Y)
+pd=NULL
+for(i in 1:10){
+  pd[i]<-nrow(subset(newtrain,newtrain$PdDistrict==levels(train$PdDistrict)[i]))
+}
+for(i in 1:10){
+  pd1x[i]<-mean(subset(newtrain,newtrain$PdDistrict==levels(train$PdDistrict)[i])$X)
+  pd1y[i]<-mean(subset(newtrain,newtrain$PdDistrict==levels(train$PdDistrict)[i])$Y)
+}
+
+plot(pd1x[1],pd1y[1],xlim=c(-122.48,-122.38),ylim=c(37.71,37.81),xlab="Longitude",
+     ylab="Latitude",cex=pd[1]/20000,pch=16, 
+     main="San Francisco Criminal Rate\nof each Police Department District")
+points(pd1x[2],pd1y[2],cex=pd[2]/20000,pch=16,col=c('grey90'))
+points(pd1x[3],pd1y[3],cex=pd[3]/20000,pch=16,col=c('grey80'))
+points(pd1x[4],pd1y[4],cex=pd[4]/20000,pch=16,col=c('grey70'))
+points(pd1x[5],pd1y[5],cex=pd[5]/20000,pch=16,col=c('grey60'))
+points(pd1x[6],pd1y[6],cex=pd[6]/20000,pch=16,col=c('grey50'))
+points(pd1x[7],pd1y[7],cex=pd[7]/20000,pch=16,col=c('grey40'))
+points(pd1x[8],pd1y[8],cex=pd[8]/20000,pch=16,col=c('grey30'))
+points(pd1x[9],pd1y[9],cex=pd[9]/20000,pch=16,col=c('grey20'))
+points(pd1x[10],pd1y[10],cex=pd[10]/20000,pch=16,col=c('grey10'))
+text(pd1x,pd1y,names=levels(newtrain$PdDistirct),col=2)
+f<-data.frame(h<-c(1:10),k<-rep(".",10),j<-levels(newtrain$PdDistrict))
+f<-cbind(h,k,j)
+paste0(h,k,j,seq="','",collapse="")
+mm<-c('PdDistrict','1.BAYVIEW','2.CENTRAL','3.INGLESIDE','4.MISSION',
+      '5.NORTHERN','6.PARK','7.RICHMOND','8.SOUTHERN','9.TARAVAL','10.TENDERLOIN')
+legend(x=-122.46,y=37.765,legend=mm,ncol=1,cex=.8,bg="grey93")
+sf.population=(805235+852469)/2; pc=NULL
+for(i in 1:10){
+  pc[i]=pd[i]/sf.population
+}
+pc=round(c(pc[1:10]),4)
+percent=sprintf("%.2f%%", pc*100)
+text(pd1x, pd1y+0.007, labels=percent, col="lightblue3", cex=1, font=2)
+```
+
+
+
+```{r, echo=TRUE}
+levels(newtrain$Category)
+sort(table(newtrain$Category),decreasing=T)
+a<-names(which(table(newtrain$Category)<10000))
+a
+category<-as.vector(newtrain$Category)
+for(i in 1:length(category)){
+  if(any(category[i]==a)) category[i]<-as.vector(paste("other"))
+  else category[i]<-category[i]
+}
+category<-as.factor(category)
+x<-sort(table(category),decreasing=T)
+xx=as.vector(x)
+xx=xx[-5]
+xx=xx/nrow(newtrain)
+pp=sprintf("%.2f%%", xx*100)
+z1=barplot(xx, names.arg=c(1:14), xlab="Categories",
+        ylab="Percentage of Crime",ylim=c(0,0.23), col=heat.colors(14),
+        main="Percentage of top 14 Crime")
+text(z1, xx+0.007, labels=pp, col="darkgreen", cex=0.8, font=2)
+namess<-c('1.LARCENY/THEFT','2.OTHER OFFENSES','3.NON-CRIMINAL','4.ASSAULT','5.DRUG/NARCOTIC',
+          '6.VEHICLE THEFT','7.VANDALISM','8.WARRANTS','9.BURGLARY','10.SUSPICIOUS OCC',
+          '11.MISSING PERSON','12.ROBBERY','13.FRAUD','14.FORGERY/COUNTERFEITING')
+legend(x=6,y=0.2,legend=namess,bg="grey93",cex=0.8)
+
+aa<-c(a)
+othera<-matrix(0,25,2)
+category<-as.vector(newtrain$Category)
+for(j in 1:25){
+  othera[j,1]<-aa[j]
+  othera[j,2]<-sum(table(category==othera[j,1])[2])
+}  
+othera1<-othera[order(as.numeric(othera[,2]),decreasing=T),]
+cc<-sort(as.numeric(othera[,2])/nrow(newtrain),decreasing=T)
+ccp=sprintf("%.1f%%", cc*100)
+z2=barplot(cc, names.arg=c(1:25), ylab="Percentage of Crime", ylim=c(0,0.012),
+        col=terrain.colors(25), main="Percentage of other Crime")
+text(z2, cc+0.0003, labels=ccp, col="lightcoral", cex=0.7, font=2)
+namessa1<-c('1.SECONDARY CODES','2.WEAPON LAWS','3.PROSTITUTION','4.TRESPASS',
+            '5.STOLEN PROPERTY','6.SEX OFFENSES FORCIBLE','7.DISORDERLY CONDUCT',
+            '8.DRUNKENNESS','9.RECOVERED VEHICLE','10.KIDNAPPING')
+legend(x=7,y=0.012,legend=namessa1,bg="grey93",cex=0.8)
+namessa2<-c( '11.DRIVING UNDER\n     THE INFLUENCE','12.RUNAWAY',
+             '13.LIQUOR LAWS','14.ARSON','15.LOITERING','16.EMBEZZLEMENT',
+             '17.SUICIDE','18.FAMILY OFFENSES','19.BAD CHECKS','20.BRIBERY',
+             '21.EXTORTION','22.SEX OFFENSES\n     NON FORCIBLE','23.GAMBLING',
+             '24.PORNOGRAPHY/\n     OBSCENE MAT','25.TREA')        
+legend(x=19,y=0.012,legend=namessa2,bg="grey93",cex=0.8)
+```
+
+
+
+```{r, echo=FALSE}
+library(ggmap)
+library(ggplot2)
+library(dplyr)
+sfMap <- qmap("San Francisco", zoom = 12, color = "bw")
+p <- sfMap +
+     geom_point(data=newtrain, aes(x=X, y=Y, color=factor(PdDistrict)), alpha=0.05) +
+     guides(colour = guide_legend(override.aes = list(alpha=0.5, size=4.0),
+                                  title="PdDistrict")) +
+     scale_colour_brewer(type="qual",palette="Paired") + 
+     ggtitle("Map of PdDistricts") +
+     theme_light(base_size=15) +
+     theme(axis.line=element_blank(),
+           axis.text.x=element_blank(),
+           axis.text.y=element_blank(),
+           axis.ticks=element_blank(),
+           axis.title.x=element_blank(),
+           axis.title.y=element_blank())
+p
+```
+
+
+
+```{r, echo=FALSE}
+#Draw the total number of crime in each district through time series
+BAYVIEW = subset(newtrain,newtrain$PdDistrict=="BAYVIEW")
+CENTRAL = subset(newtrain,newtrain$PdDistrict=="CENTRAL")
+INGLESIDE = subset(newtrain,newtrain$PdDistrict=="INGLESIDE")
+MISSION = subset(newtrain,newtrain$PdDistrict=="MISSION")
+NORTHERN = subset(newtrain,newtrain$PdDistrict=="NORTHERN")
+PARK = subset(newtrain,newtrain$PdDistrict=="PARK")
+RICHMOND = subset(newtrain,newtrain$PdDistrict=="RICHMOND")
+SOUTHERN = subset(newtrain,newtrain$PdDistrict=="SOUTHERN")
+TARAVAL = subset(newtrain,newtrain$PdDistrict=="TARAVAL")
+TENDERLOIN = subset(newtrain,newtrain$PdDistrict=="TENDERLOIN")
+
+ba<-strptime(BAYVIEW$Dates,format="%Y-%m-%d")
+ba_year<-ba$year+1900
+ba_mon<-ba$mon+1
+bak=matrix(0,12,13)
+for(i in 1:12){
+  for(j in 1:13){
+    bak[i,j]=sum(ba_year==2002+j & ba_mon==i)
+  }
+}
+bap=ts(c(bak[,1:13]),start=c(2003,1),end=c(2015,5),frequency=12)
+ts.plot(bap,main="BAYVIEW")
+
+cd<-strptime(CENTRAL$Dates,format="%Y-%m-%d")
+cd_year<-cd$year+1900
+cd_mon<-cd$mon+1
+cdk=matrix(0,12,13)
+for(i in 1:12){
+  for(j in 1:13){
+    cdk[i,j]=sum(cd_year==2002+j & cd_mon==i)
+  }
+}
+cdp=ts(c(cdk[,1:13]),start=c(2003,1),end=c(2015,5),frequency=12)
+ts.plot(cdp,main="CENTRAL")
+
+ing<-strptime(INGLESIDE$Dates,format="%Y-%m-%d")
+ing_year<-ing$year+1900
+ing_mon<-ing$mon+1
+ink=matrix(0,12,13)
+for(i in 1:12){
+  for(j in 1:13){
+    ink[i,j]=sum(ing_year==2002+j & ing_mon==i)
+  }
+}
+inp=ts(c(ink[,1:13]),start=c(2003,1),end=c(2015,5),frequency=12)
+ts.plot(inp, main="INGLESIDE")
+
+mi<-strptime(MISSION$Dates,format="%Y-%m-%d")
+mi_year<-mi$year+1900
+mi_mon<-mi$mon+1
+mik=matrix(0,12,13)
+for(i in 1:12){
+  for(j in 1:13){
+    mik[i,j]=sum(mi_year==2002+j & mi_mon==i)
+  }
+}
+mip=ts(c(mik[,1:13]),start=c(2003,1),end=c(2015,5),frequency=12)
+ts.plot(mip, main="MISSION")
+
+no<-strptime(NORTHERN$Dates,format="%Y-%m-%d")
+no_year<-no$year+1900
+no_mon<-no$mon+1
+nok=matrix(0,12,13)
+for(i in 1:12){
+  for(j in 1:13){
+    nok[i,j]=sum(no_year==2002+j & no_mon==i)
+  }
+}
+nop=ts(c(nok[,1:13]),start=c(2003,1),end=c(2015,5),frequency=12)
+ts.plot(nop, main="NORTHERN")
+
+pa<-strptime(PARK$Dates,format="%Y-%m-%d")
+pa_year<-pa$year+1900
+pa_mon<-pa$mon+1
+pak=matrix(0,12,13)
+for(i in 1:12){
+  for(j in 1:13){
+    pak[i,j]=sum(pa_year==2002+j & pa_mon==i)
+  }
+}
+pap=ts(c(pak[,1:13]),start=c(2003,1),end=c(2015,5),frequency=12)
+ts.plot(pap, main="PARK")
+
+ri<-strptime(RICHMOND$Dates,format="%Y-%m-%d")
+ri_year<-ri$year+1900
+ri_mon<-ri$mon+1
+rik=matrix(0,12,13)
+for(i in 1:12){
+  for(j in 1:13){
+    rik[i,j]=sum(ri_year==2002+j & ri_mon==i)
+  }
+}
+rip=ts(c(rik[,1:13]),start=c(2003,1),end=c(2015,5),frequency=12)
+ts.plot(rip, main="RICHMOND")
+
+so=strptime(SOUTHERN$Dates,format='%Y-%m-%d ')
+so_mon=so$mon+1
+so_year=so$year+1900
+sok=matrix(0,12,13)
+for(i in 1:12){
+  for(j in 1:13){
+    sok[i,j]=sum(so_year==2002+j & so_mon==i)
+  } 
+}
+sop=ts(c(sok[,1:13]),start=c(2003,1),end=c(2015,5),frequency=12)
+ts.plot(sop, main="SOUTHERN")
+
+ta=strptime(TARAVAL$Dates,format='%Y-%m-%d ')
+ta_mon=ta$mon+1
+ta_year=ta$year+1900
+tak=matrix(0,12,13)
+for(i in 1:12){
+  for(j in 1:13){
+    tak[i,j]=sum(ta_year==2002+j & ta_mon==i)
+  }
+}
+tap=ts(c(tak[,1:13]),start=c(2003,1),end=c(2015,5),frequency=12)
+ts.plot(tap, main="TARAVAL")
+
+te=strptime(TENDERLOIN$Dates,format='%Y-%m-%d ')
+te_mon=te$mon+1
+te_year=te$year+1900
+tek=matrix(0,12,13)
+for(i in 1:12){
+  for(j in 1:13){
+    tek[i,j]=sum(te_year==2002+j & te_mon==i)
+  } 
+}
+tep=ts(c(tek[,1:13]),start=c(2003,1),end=c(2015,5),frequency=12)
+ts.plot(tep, main="TENDERLOIN")
+```
+
+
+
+```{r, echo=FALSE, fig.height=6}
+#1
+mean.ba=c()
+for(i in 1:12){
+  now=c()
+  for(j in 1:12){
+    now=c(now,c(bak[j*12-12+i]))
+  }
+  mean.ba=c(mean.ba,mean(now))
+}  
+
+#2
+mean.cd=c()
+for(i in 1:12){
+  now=c()
+  for(j in 1:12){
+    now=c(now,c(cdk[j*12-12+i]))
+  }
+  mean.cd=c(mean.cd,mean(now))
+}
+
+#3
+mean.ing=c()
+for(i in 1:12){
+  now=c()
+  for(j in 1:12){
+    now=c(now,c(ink[j*12-12+i]))
+  }
+  mean.ing=c(mean.ing,mean(now))
+}
+
+#4
+mean.mi=c()
+for(i in 1:12){
+  now=c()
+  for(j in 1:12){
+    now=c(now,c(mik[j*12-12+i]))
+  }
+  mean.mi=c(mean.mi,mean(now))
+}
+
+#5
+mean.no=c()
+for(i in 1:12){
+  now=c()
+  for(j in 1:12){
+    now=c(now,c(nok[j*12-12+i]))
+  }
+  mean.no=c(mean.no,mean(now))
+}
+
+#6
+mean.pa=c()
+for(i in 1:12){
+  now=c()
+  for(j in 1:12){
+    now=c(now,c(pak[j*12-12+i]))
+  }
+  mean.pa=c(mean.pa,mean(now))
+}
+
+#7
+mean.ri=c()
+for(i in 1:12){
+  now=c()
+  for(j in 1:12){
+    now=c(now,c(rik[j*12-12+i]))
+  }
+  mean.ri=c(mean.ri,mean(now))
+}
+
+#8
+mean.so=c()
+for(i in 1:12){
+  now=c()
+  for(j in 1:12){
+    now=c(now,c(sok[j*12-12+i]))
+  }
+  mean.so=c(mean.so,mean(now))
+}
+
+#9
+mean.ta=c()
+for(i in 1:12){
+  now=c()
+  for(j in 1:12){
+    now=c(now,c(tak[j*12-12+i]))
+  }
+  mean.ta=c(mean.ta,mean(now))
+}
+
+mean.te=c()
+for(i in 1:12){
+  now=c()
+  for(j in 1:12){
+    now=c(now,c(tek[j*12-12+i]))
+  }
+  mean.te=c(mean.te,mean(now))
+}
+mean=cbind(mean.ba,mean.cd,mean.ing,mean.mi,
+           mean.no,mean.pa,mean.ri,mean.so,mean.ta,mean.te)
+rownames(mean) <- c('Jan','Feb','Mar','Apr','May','Jun',
+                    'Jul','Aug','Sep','Oct','Nov','Dec')
+plot(mean[1:12,1],type="o",ylab="Number of crime",xlab="month",
+     ylim=c(0,max(mean)),lwd=2,xaxt = "n",pch=9, 
+     main="2003-2014 Number of Crime\nper month")
+axis(1,at=seq(1,12,1))
+for(i in 2 :10){
+  lines(mean[1:12,i],type="o",col=i,lwd=2,pch=8+i)  
+}
+legend(0.8,200,c("BAYVIEW","CENTRAL","INGLESIDE","MISSION"),
+       col=1:4,lwd=c(2,2,2,2),pch=c(9,10,11,12),cex=0.8)
+legend(4,200,c("NORTHERN","PARK ","RICHMOND","SOUTHERN"),
+       col=5:8,lwd=c(2,2,2,2),pch=c(13,14,15,16),cex=0.8)       
+legend(8,200,c("TARAVAL","TENDERLOIN"),col=9:10,lwd=c(2,2),pch=c(17,18),cex=0.8)    
+
+mean.total=c()
+for(i in 1:12){
+  mean.total=c(mean.total,sum(mean[i,]))
+}
+meanall=cbind(mean,mean.total)
+
+meanpop=matrix(0,12,10)
+for(i in 1:12){
+  for(j in 1:10){
+    meanpop[i,j]<-(meanall[i,j]/meanall[i,11])
+  }
+}
+
+rownames(meanpop) <- c('Jan','Feb','Mar','Apr','May','Jun',
+                       'Jul','Aug','Sep','Oct','Nov','Dec')  
+plot(meanpop[1:12,1],type="o",ylab="Propotion of crime",
+     xlab="month",ylim=c(0,max(meanpop)),lwd=2,xaxt = "n",pch=9)
+axis(1,at=seq(1,12,1))
+for(i in 2 :10){
+  lines(meanpop[1:12,i],type="o",col=i,lwd=2,pch=8+i)  
+}
+legend(0.8,0.045,c("BAYVIEW","CENTRAL","INGLESIDE","MISSION"),
+       col=1:4,lwd=c(2,2,2,2),pch=c(9,10,11,12),cex=0.8)
+legend(4,0.045,c("NORTHERN","PARK ","RICHMOND","SOUTHERN"),
+       col=5:8,lwd=c(2,2,2,2),pch=c(13,14,15,16),cex=0.8)       
+legend(8,0.045,c("TARAVAL","TENDERLOIN"),col=9:10,lwd=c(2,2),pch=c(17,18),cex=0.8)    
+title(main="2003-2014 Criminal Rate\nper month",cex.main=1.4)
+```
+
+
+
+```{r}
+counts_theft<-table(newtrain$Category!="LARCENY/THEFT", newtrain$PdDistrict)
+countsall=counts_theft[1,]+counts_theft[2,]
+barplot(t(cbind(counts_theft[1,]/countsall,counts_theft[2,]/countsall)),col=c("lightblue","pink"),main="LARCENY/THEFT",legend.text=c("YES","NO"))
+
+counts_drug<-table(newtrain$Category!="DRUG/NARCOTIC", newtrain$PdDistrict)
+barplot(t(cbind(counts_drug[1,]/countsall,counts_drug[2,]/countsall)),col=c("lightgreen","coral"),main="DRUG/NARCOTIC",legend.text=c("YES","NO"))
+
+counts_other<-table(newtrain$Category!="OTHER OFFENSES", newtrain$PdDistrict)
+barplot(t(cbind(counts_other[1,]/countsall,counts_other[2,]/countsall)),col=c("DarkCyan","khaki"),main="OTHER OFFENSES",legend.text=c("YES","NO"))
+```
+
+
+
+```{r}
+#Week of Day Crime Rate
+newtrain$DayOfWeek<-factor(newtrain$DayOfWeek,levels=c("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"))
+bb=table(newtrain$DayOfWeek)/nrow(newtrain)
+a=barplot(bb,xlab="Day Of Week",ylab="Crime Rate",ylim=c(0,0.18),col="lightgreen",main="Crime Rate in Each Day of Week")
+pp=sprintf("%.2f%%", bb*100)
+text(a, bb+0.007, labels=pp, col="darkorange3", cex=1.4)
+```
+
+
+```{r}
+###barplot in each category
+newtrain$newCategory<-newtrain$Category
+newtrain$newCategory<-paste0(newtrain$newCategory)
+
+newtrain$newCategory[which(
+  newtrain$newCategory=="BAD CHECKS"|
+    newtrain$newCategory=="BRIBERY"|
+    newtrain$newCategory=="EMBEZZLEMENT"|
+    newtrain$newCategory=="EXTORTION"|
+    newtrain$newCategory=="FORGERY/COUNTERFEITING"|
+    newtrain$newCategory=="FRAUD"|
+    newtrain$newCategory=="GAMBLING"|
+    newtrain$newCategory=="SECONDARY CODES"|
+    newtrain$newCategory=="SUSPICIOUS OCC")]<-"FINANCIAL"
+
+newtrain$newCategory[which(
+  newtrain$newCategory=="ARSON"|
+    newtrain$newCategory=="ASSAULT"|
+    newtrain$newCategory=="KIDNAPPING"|
+    newtrain$newCategory=="WEAPON LAWS"|
+    newtrain$newCategory=="FAMILY OFFENSES")]<-"VIOLENCE"
+
+newtrain$newCategory[which(
+  newtrain$newCategory=="DRIVING UNDER THE INFLUENCE"|
+    newtrain$newCategory=="DRUG/NARCOTIC"|
+    newtrain$newCategory=="DRUNKENNESS"|
+    newtrain$newCategory=="LIQUOR LAWS"|
+    newtrain$newCategory=="VANDALISM"|
+    newtrain$newCategory=="DISORDERLY CONDUCT"|
+    newtrain$newCategory=="TREA"|
+    newtrain$newCategory=="TRESPASS")]<-"SOCIAL SECURE"
+
+newtrain$newCategory[which(
+  newtrain$newCategory=="PORNOGRAPHY/OBSCENE MAT"|
+    newtrain$newCategory=="PROSTITUTION"|
+    newtrain$newCategory=="SEX OFFENSES FORCIBLE"|
+    newtrain$newCategory=="SEX OFFENSES NON FORCIBLE")]<-"SEX CRIME"
+
+newtrain$newCategory[which(
+  newtrain$newCategory=="BURGLARY"|
+    newtrain$newCategory=="LARCENY/THEFT"|
+    newtrain$newCategory=="RECOVERED VEHICLE"|
+    newtrain$newCategory=="ROBBERY"|
+    newtrain$newCategory=="STOLEN PROPERTY"|
+    newtrain$newCategory=="VEHICLE THEFT")]<-"THEFT"
+
+newtrain$newCategory[which(
+  newtrain$newCategory=="NON-CRIMINAL"|
+    newtrain$newCategory=="OTHER OFFENSES"|
+    newtrain$newCategory=="SUICIDE"|
+    newtrain$newCategory=="WARRANTS")]<-"OTHER"
+
+newtrain$newCategory[which(
+  newtrain$newCategory=="MISSING PERSON"|
+    newtrain$newCategory=="RUNAWAY"|
+    newtrain$newCategory=="LOITERING")]<-"PERSON"
+
+sp=newtrain; sp$Category=newtrain$newCategory
+D1=sp[which(sp$Category=="THEFT"),]
+D1$PdDistrict=as.factor(D1$PdDistrict)
+Q1=sort(table(D1$PdDistrict),decreasing=TRUE)
+Q1x=as.vector(Q1)
+Q1x=Q1x/sum(Q1x)
+p.Q1x=sprintf("%.2f%%",Q1x*100)
+QQ1=barplot(Q1x, names.arg=c(1:10), xlab="Police Department Destrict", ylab="Crime Rate", ylim=c(0,0.23), col=grey.colors(10), main="Crime Rate of THEFT\nin each Police Department District")
+text(QQ1, Q1x+0.007, labels=p.Q1x, col="navy", cex=1, font=2)
+name=cat(paste0("'",1:10,".",names(Q1),"'",sep=","))
+name=c('1.SOUTHERN', '2.NORTHERN', '3.CENTRAL', '4.MISSION', '5.INGLESIDE', '6.BAYVIEW', '7.TARAVAL', '8.RICHMOND', '9.PARK', '10.TENDERLOIN')
+legend(x=7, y=0.2, legend=name, bg="grey93", cex=0.9)
+
+D2=sp[which(sp$Category=="VIOLENCE"),]
+D2$PdDistrict=as.factor(D2$PdDistrict)
+Q2=sort(table(D2$PdDistrict),decreasing=TRUE)
+Q2x=as.vector(Q2)
+Q2x=Q2x/sum(Q2x)
+p.Q2x=sprintf("%.2f%%",Q2x*100)
+QQ2=barplot(Q2x, names.arg=c(1:10), xlab="Police Department Destrict", ylab="Crime Rate", ylim=c(0,0.23), col=grey.colors(10), main="Crime Rate of VIOLENCE\nin each Police Department District")
+text(QQ2, Q2x+0.007, labels=p.Q2x, col="navy", cex=1, font=2)
+name=cat(paste0("'",1:10,".",names(Q2),"'",sep=","))
+name=c('1.SOUTHERN', '2.MISSION', '3.BAYVIEW', '4.NORTHERN', '5.INGLESIDE', '6.CENTRAL', '7.TENDERLOIN', '8.TARAVAL', '9.PARK', '10.RICHMOND')
+legend(x=7, y=0.2, legend=name, bg="grey93", cex=0.9)
+
+D3=sp[which(sp$Category=="SOCIAL SECURE"),]
+D3$PdDistrict=as.factor(D3$PdDistrict)
+Q3=sort(table(D3$PdDistrict),decreasing=TRUE)
+Q3x=as.vector(Q3)
+Q3x=Q3x/sum(Q3x)
+p.Q3x=sprintf("%.2f%%",Q3x*100)
+QQ3=barplot(Q3x, names.arg=c(1:10), xlab="Police Department Destrict", ylab="Crime Rate", ylim=c(0,0.28), col=grey.colors(10), main="Crime Rate of SOCIAL SECURE\nin each Police Department District")
+text(QQ3, Q3x+0.007, labels=p.Q3x, col="navy", cex=1, font=2)
+name=cat(paste0("'",1:10,".",names(Q3),"'",sep=","))
+name=c('1.TENDERLOIN', '2.MISSION', '3.SOUTHERN', '4.NORTHERN', '5.BAYVIEW', '6.PARK', '7.CENTRAL', '8.INGLESIDE', '9.TARAVAL', '10.RICHMOND')
+legend(x=7, y=0.23, legend=name, bg="grey93", cex=0.9)
+
+D4=sp[which(sp$Category=="FINANCIAL"),]
+D4$PdDistrict=as.factor(D4$PdDistrict)
+Q4=sort(table(D4$PdDistrict),decreasing=TRUE)
+Q4x=as.vector(Q4)
+Q4x=Q4x/sum(Q4x)
+p.Q4x=sprintf("%.2f%%",Q4x*100)
+QQ4=barplot(Q4x, names.arg=c(1:10), xlab="Police Department Destrict", ylab="Crime Rate", ylim=c(0,0.23), col=grey.colors(10), main="Crime Rate of FINANCIAL\nin each Police Department District")
+text(QQ4, Q4x+0.007, labels=p.Q4x, col="navy", cex=1, font=2)
+name=cat(paste0("'",1:10,".",names(Q4),"'",sep=","))
+name=c('1.SOUTHERN', '2.NORTHERN', '3.CENTRAL', '4.MISSION', '5.BAYVIEW', '6.TARAVAL', '7.INGLESIDE', '8.TENDERLOIN', '9.PARK', '10.RICHMOND')
+legend(x=8, y=0.2, legend=name, bg="grey93", cex=0.9)
+
+D5=sp[which(sp$Category=="PERSON"),]
+D5$PdDistrict=as.factor(D5$PdDistrict)
+Q5=sort(table(D5$PdDistrict),decreasing=TRUE)
+Q5x=as.vector(Q5)
+Q5x=Q5x/sum(Q5x)
+p.Q5x=sprintf("%.2f%%",Q5x*100)
+QQ5=barplot(Q5x, names.arg=c(1:10), xlab="Police Department Destrict", ylab="Crime Rate", ylim=c(0,0.2), col=grey.colors(10), main="Crime Rate of PERSON\nin each Police Department District")
+text(QQ5, Q5x+0.007, labels=p.Q5x, col="navy", cex=1, font=2)
+name=cat(paste0("'",1:10,".",names(Q5),"'",sep=","))
+name=c('1.BAYVIEW', '2.TARAVAL', '3.SOUTHERN', '4.MISSION', '5.PARK', '6.INGLESIDE', '7.NORTHERN', '8.RICHMOND', '9.CENTRAL', '10.TENDERLOIN')
+legend(x=8, y=0.17, legend=name, bg="grey93", cex=0.9)
+
+D6=sp[which(sp$Category=="SEX CRIME"),]
+D6$PdDistrict=as.factor(D6$PdDistrict)
+Q6=sort(table(D6$PdDistrict),decreasing=TRUE)
+Q6x=as.vector(Q6)
+Q6x=Q6x/sum(Q6x)
+p.Q6x=sprintf("%.2f%%",Q6x*100)
+QQ6=barplot(Q6x, names.arg=c(1:10), xlab="Police Department Destrict", ylab="Crime Rate", ylim=c(0,0.45), col=grey.colors(10), main="Crime Rate of SEX CRIME\nin each Police Department District")
+text(QQ6, Q6x+0.007, labels=p.Q6x, col="navy", cex=1, font=2)
+name=cat(paste0("'",1:10,".",names(Q6),"'",sep=","))
+name=c('1.MISSION', '2.NORTHERN', '3.TENDERLOIN', '4.CENTRAL', '5.SOUTHERN', '6.INGLESIDE', '7.BAYVIEW', '8.TARAVAL', '9.PARK', '10.RICHMOND')
+legend(x=7, y=0.4, legend=name, bg="grey93", cex=0.9)
+
+D7=sp[which(sp$Category=="OTHER"),]
+D7$PdDistrict=as.factor(D7$PdDistrict)
+Q7=sort(table(D7$PdDistrict),decreasing=TRUE)
+Q7x=as.vector(Q7)
+Q7x=Q7x/sum(Q7x)
+p.Q7x=sprintf("%.2f%%",Q7x*100)
+QQ7=barplot(Q7x, names.arg=c(1:10), xlab="Police Department Destrict", ylab="Crime Rate", ylim=c(0,0.23), col=grey.colors(10), main="Crime Rate of OTHER\nin each Police Department District")
+text(QQ7, Q7x+0.007, labels=p.Q7x, col="navy", cex=1, font=2)
+name=cat(paste0("'",1:10,".",names(Q7),"'",sep=","))
+name=c('1.SOUTHERN', '2.MISSION', '3.TENDERLOIN', '4.NORTHERN', '5.BAYVIEW', '6.INGLESIDE', '7.CENTRAL', '8.TARAVAL', '9.RICHMOND', '10.PARK')
+legend(x=7, y=0.2, legend=name, bg="grey93", cex=0.9)
+
+cat(paste("Q",1:7,"[",1,"]",sep="",collapse=","))
+z1=c(Q1[1],Q2[1],Q3[1],Q4[1],Q5[1],Q6[1],Q7[1]) 
+z1=z1/sum(z1)
+z2=c("THEFT","VIOLENCE","SOCIAL\nSECURE","FINANCIAL","PERSON","SEX CRIME","OTHER")
+M=matrix(c(z2,z1),7,2)
+M1=barplot(as.numeric(M[,2]), names.arg=z2, col=heat.colors(7), ylim=c(0,0.38), xlab="Manual Classification", ylab="Crime Rate", main="The Most Common PdDistrict\nof Crime Occurred in each Category")
+Mname1=c("SOUTHERN","SOUTHERN","TENDERLOIN","SOUTHERN","BAYVIEW","MISSION","SOUTHERN")
+Mname2=sprintf("%.2f%%", z1*100)
+text(M1, as.numeric(M[,2])+0.02, labels=Mname1, col="darkgreen", font=2)
+text(M1, as.numeric(M[,2])+0.01, labels=Mname2, col="cornflowerblue", font=2)
+```
+
+
+```{r}
+train=read.csv("~/Desktop/NCKU/Consulting/kaggle_crime/train.csv", header=TRUE)
+newtrain=subset(train, train$Y!=90)
+#whether morning or afternoon crime rate is higher
+newtrain$dd<-strptime(newtrain$Dates,format="%Y-%m-%d %H:%M:%S")
+dates_hour<-newtrain$dd$hour
+table(dates_hour)
+dates_hour1<-factor(dates_hour,levels=c("6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","23","0","1","2","3","4","5"))
+newtrain$hour<-newtrain$dd$hour
+morning<-newtrain[which(newtrain$hour<=17&newtrain$hour>=6),]
+afternoon<-newtrain[which(newtrain$hour<=5|newtrain$hour>=18),]
+
+#crime rate per hour
+bb=barplot(table(dates_hour1)/nrow(newtrain),col=c("khaki","khaki","khaki","khaki","khaki","khaki","khaki","khaki","khaki","khaki","khaki","khaki","DarkCyan","DarkCyan","DarkCyan","DarkCyan","DarkCyan","DarkCyan","DarkCyan","DarkCyan","DarkCyan","DarkCyan","DarkCyan","DarkCyan"),xlab="Hour",ylab="Percentage",main="Crime Rate per Hour",ylim=c(0,0.065))
+s=table(dates_hour1)/nrow(newtrain)
+ss=sprintf("%.2f%%",s*100)
+c=c(ss[7],ss[12],ss[13])
+text(c(8,13.5,15), c(0.06,0.062,0.064),labels=c,col="brown4")
+
+
+#pie chart/day and night
+m_a=c(nrow(afternoon),nrow(morning))
+p_a=c(nrow(afternoon)/(nrow(afternoon)+nrow(morning)),nrow(morning)/(nrow(afternoon)+nrow(morning)))
+names(m_a)<-c("AFTERNOON\n46.35%","MORNING\n53.65%")
+pie(m_a,edges = 200,clockwise=T,radius = 1,col=c("DarkCyan","khaki"),cex=1.3,main="Proportion of Crime Rate\nseperated in Morning and Afternoon")
+
+
+#Difference of crime rate in day and night
+m_category<-sort(table(morning$Category)/nrow(morning),decreasing=T)
+af_category<-sort(table(afternoon$Category)/nrow(afternoon),decreasing=T)
+
+levels(morning$Category)
+sort(table(morning$Category),decreasing=T)
+m<-names(which(table(morning$Category)<5000))
+category_m<-as.vector(morning$Category)
+for(i in 1:length(category_m)){
+  if(any(category_m[i]==m))category_m[i]<-as.vector(paste("other"))
+  else category_m[i]<-category_m[i]
+}
+category_m<-as.factor(category_m)
+mm<-sort(table(category_m),decreasing=T)
+mm[17]=mm[6]
+mm=mm[-6]
+cc=barplot(mm/(nrow(morning)+nrow(afternoon)), names.arg=c(1:16),xlab="Categories", ylab="percentage of Crime",main="Morning\n6 a.m. ~ 17 p.m.",ylim=c(0,0.12),col=topo.colors(16))
+namess<-c('1.LARCENY/THEFT','2.OTHER OFFENSES','3.NON-CRIMINAL','4.ASSAULT','5.DRUG/NARCOTIC',
+          '6.WARRANTS','7.VEHICLE THEFT','8.BURGLARY','9.SUSPICIOUS OCC','10.VANDALISM',
+          '11.MISSING PERSON','12.FRAUD','13.ROBBERY','14.FORGERY/COUNTERFEITING','15.SECONDARY CODES',
+          '16.other')
+legend(x=10,y=0.11,legend=namess,bg="grey93",cex=0.9)
+t=sprintf("%.2f%%",mm/(nrow(morning)+nrow(afternoon))*100)
+text(cc, mm/(nrow(morning)+nrow(afternoon))+0.005,labels=t,col="brown4")
+
+levels(afternoon$Category)
+sort(table(afternoon$Category),decreasing=T)
+af<-names(which(table(afternoon$Category)<5000))
+category_af<-as.vector(afternoon$Category)
+for(i in 1:length(category_af)){
+  if(any(category_af[i]==af))category_af[i]<-as.vector(paste("other"))
+  else category_af[i]<-category_af[i]
+}
+category_af<-as.factor(category_af)
+aff<-sort(table(category_af),decreasing=T)
+aff[16]=aff[5]
+aff=aff[-5]
+ee=barplot(aff/(nrow(morning)+nrow(afternoon)), names.arg=c(1:15),xlab="Categories", ylab="percentage of Crime",main="Afternoon\n18 p.m. ~ 5 a.m.",col=topo.colors(15),ylim=c(0,0.12))
+namess<-c('1.LARCENY/THEFT','2.OTHER OFFENSES','3.ASSAULT','4.NON-CRIMINAL','5.VEHICLE THEFT',
+          '6.VANDALISM','7.DRUG/NARCOTIC','8.WARRANTS','9.BURGLARY','10.ROBBERY',
+          '11.SUSPICIOUS OCC','12.MISSING PERSON','13.FRAUD','14. PROSTITUTION ','15.other')
+legend(x=10,y=0.11,legend=namess,bg="grey93",cex=0.8)
+af=sprintf("%.2f%%",aff/(nrow(morning)+nrow(afternoon))*100)
+text(ee,aff/(nrow(morning)+nrow(afternoon))+0.003,labels=af,col="brown4")
+
+day<-matrix(0,2,39)
+day[1,]<-table(morning$Category)
+day[2,]<-table(afternoon$Category)
+dayvs=c()
+for(i in 1:39){
+  dayvs[i]<-min(day[1,i],day[2,i])>5000
+}
+which(dayvs==T)
+#2  5  8 14 17 20 21 22 26 33 36 37 38
+dayy=matrix(0,2,14)
+dayy[,1]<-day[,2]
+dayy[,2]<-day[,5]
+dayy[,3]<-day[,8]
+dayy[,4]<-day[,14]
+dayy[,5]<-day[,17]
+dayy[,6]<-day[,20]
+dayy[,7]<-day[,21]
+dayy[,8]<-day[,22]
+dayy[,9]<-day[,26]
+dayy[,10]<-day[,33]
+dayy[,11]<-day[,36]
+dayy[,12]<-day[,37]
+dayy[,13]<-day[,38]
+dayy[1,14]<-sum(day[1,1]+day[1,3]+day[1,4]+day[1,6]+day[1,7]+day[1,9]+day[1,10]+
+                day[1,11]+day[1,12]+day[1,13]+day[1,15]+day[1,16]+day[1,18]+day[1,19]+
+                day[1,23]+day[1,24]+day[1,25]+day[1,27]+day[1,28]+day[1,29]+day[1,30]+
+                day[1,31]+day[1,32]+day[1,34]+day[1,35]+day[1,39])
+dayy[2,14]<-sum(day[2,1]+day[2,3]+day[2,4]+day[2,6]+day[2,7]+day[2,9]+day[2,10]+
+                  day[2,11]+day[2,12]+day[2,13]+day[2,15]+day[2,16]+day[2,18]+day[2,19]+
+                  day[2,23]+day[2,24]+day[2,25]+day[2,27]+day[2,28]+day[2,29]+day[2,30]+
+                  day[2,31]+day[2,32]+day[2,34]+day[2,35]+day[2,39])              
+barplot(dayy/nrow(newtrain),xlab="Category",col=c("khaki","DarkCyan"),beside=T,names.arg=c(1:14), ylab="Percentage of Crime",ylim=c(0,0.12),legend.text=c("Morning","Afternoon"),main="Crime Rate compared in Daytime")
+namess1<-c('1.ASSAULT','2.BURGLARY','3.DRUG/NARCOTIC','4.FRAUD','5.LARCENY/THEFT',
+          '6.MISSING PERSON','7.NON-CRIMINAL','8.OTHER OFFENSES','9.BURGLARY','10.SUSPICIOUS OCC',
+          '11.VANDALISM','12.VEHICLE THEFT','13.WARRANTS','14.other')
+legend(25,.12,legend=namess1,bg="grey93",cex=0.8)
+```
+
+
+
